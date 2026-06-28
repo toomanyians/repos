@@ -1,0 +1,18 @@
+# .gitignore
+#
+# All Word documents
+*.docx
+# Ignore batch files
+*.cmd
+# the Phase_2 folder in EveOnline
+EveOnline/Phase_2/
+
+# Ignore All certificates
+*.cer
+*.crt
+*.p12
+*.pfx
+# Ignore text files
+*.txt
+# Ignore temporary files
+*.tmp

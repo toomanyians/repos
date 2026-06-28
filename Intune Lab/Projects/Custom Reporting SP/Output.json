@@ -1,0 +1,23 @@
+{
+    "ManagedDeviceName":  "IanBaxter_Windows_6/19/2026_3:13 AM",
+    "AzureADDeviceID":  "6a41bd56-01f6-4b1f-be60-a1b01b4cdd9c",
+    "ManagedDeviceID":  "c6e23685-75af-4d76-9469-098d52c5c3de",
+    "DefenderState":  "Running",
+    "DefenderStart":  "Automatic",
+    "DefSpySigAge":  1,
+    "DefNisSigAge":  1,
+    "DefAVSigAge":  1,
+    "DefAMEngine":  "1.1.26050.11",
+    "BitlockerState":  "Running",
+    "BitlockerStart":  "Automatic",
+    "BitEncrypted":  "C:FullyDecrypted",
+    "BitEncryption":  "C:None",
+    "BitProtected":  "C:Unprotected",
+    "BitProtector":  "C:Unknown",
+    "MAC0":  "Intel(R) PRO/1000 MT Desktop Adapter|08:00:27:C4:49:3C",
+    "MAC1":  "",
+    "MAC2":  "",
+    "MAC3":  "",
+    "MAC4":  "",
+    "MAC5":  ""
+}
