@@ -1,6 +1,10 @@
 # Introduction
 
-Documentation is the key. If you want the same results every time, do the same things in the same order.
+Four years ago, I got introduced to Intune. I was not impressed, it couldn't even report the start mode and status of a Windows service.
+It was clear it needed to be extended and having experience with Configuration Manager Compiance Baselines, I quickly embraced Custom Compliance Scripts with Remediation.
+The API for submitting JSON data to Log Analytics is changing and now requires authentication to a Service Principal.
+Instead of using a Client Secret, I wanted to use a Client Certificate, but very few examples for this are available.
+Here is how I would do it.
 
 ---
 
