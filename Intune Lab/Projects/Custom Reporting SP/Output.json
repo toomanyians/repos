@@ -1,7 +1,7 @@
 {
-    "ManagedDeviceName":  "IanBaxter_Windows_6/19/2026_3:13 AM",
-    "AzureADDeviceID":  "6a41bd56-01f6-4b1f-be60-a1b01b4cdd9c",
-    "ManagedDeviceID":  "c6e23685-75af-4d76-9469-098d52c5c3de",
+    "ManagedDeviceName":  "ANONYMOUS DEVICE",
+    "AzureADDeviceID":  "AzureADDeviceID",
+    "ManagedDeviceID":  "ManagedDeviceID",
     "DefenderState":  "Running",
     "DefenderStart":  "Automatic",
     "DefSpySigAge":  0,
