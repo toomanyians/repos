@@ -19,4 +19,5 @@ Documentation is the key. If you want the same results every time, do the same t
 ### **./Custom Reporting AF/**
 - **\*.\*** — The same as Custom Reporting SP (Service Prinicipal), but using Azure Functions (Pending)  
 
-
+### **./Data_Extraction/**
+- **\*.\*** — Powershell and Python scripts to extract data from Azure and Intune for reporting (Pending)  
