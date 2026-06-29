@@ -1,5 +1,9 @@
 # Introduction
 
+This project focuses on submitting, collecting, processing, and analyzing data from various Azure APIs.
+
+As robust as Intune is, it still has reporting and inventory limitations. Extending Intune's functionality with compliance reporting is the focus of this lab.
+
 
 ---
 

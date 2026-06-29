@@ -5,17 +5,26 @@
 Add-Type -AssemblyName System.Web
 #
 # Service Principal Data (Required for Token)
-$ApplicationID = "f68fd352-af49-4987-8868-21ca40ee352e"
-$TenantID = "0d6451ad-114c-4d3a-ae83-93e99688a435"
+$ApplicationID = "<Application/Client ID>"
+$TenantID = "<Tenant ID>"
 $CertName = "Data Collect"
 #
 # Log Analytics Data (for JSON submission)
-$DcrImmutableId = "" # id available in DCR > JSON view > immutableId
-$DceURI = "" # available in DCE > Logs Ingestion value
-$Table = "CustomInventory_CL" # custom log to create
+$DcrImmutableId = "<DCR Immutable ID>"
+$DceURI = "<DCE Data Ingestion URL>"
+$streamName = "<Stream Name from DCR JSON>"
 #
 # Script logging
-$LogFile = ""
+$LogFile = "<Log File Path>"
+#
+# If a log file has been specified and it already exists, delete it.
+if (-not [string]::IsNullOrWhiteSpace($LogFile) -and (Test-Path -LiteralPath $LogFile)) {
+    try {
+        Remove-Item -LiteralPath $LogFile -Force -ErrorAction Stop
+    } catch {
+        Write-Warning "Unable to delete log file '$LogFile'. $($_.Exception.Message)"
+    }
+}
 #
 # BEGIN FUNCTIONS
 #
@@ -99,7 +108,7 @@ function Get-AuthTokenWithCert {
         # Create the body for the request including the Client Assertion
         $body = @{ 
             client_id = $ClientId
-            scope = "https://monitor.azure.com//.default"
+            scope = "https://monitor.azure.com/.default"
             client_assertion_type = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
             client_assertion = $clientAssertion
             grant_type = "client_credentials"
@@ -133,28 +142,24 @@ function Write-Log {
         } finally {$writer.Close()}
     }
 }
-
-
+#
+# Get-ValidCertificate - 
+# Parameter(s):
+#  CertName - A pattern to match in the certificate subject
+# Returns :
+#  A certificate that is valid and where the subject contains the CertName
+#
 function Get-ValidCertificate {
+    [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]$CertName
     )
-
+    # Get today's date
     $now = Get-Date
-
-    foreach ($cert in Get-ChildItem -Path Cert:\LocalMachine\My) {
-        if ($cert.Subject -like "*$CertName*" -and
-            $cert.NotBefore -le $now -and
-            $cert.NotAfter  -ge $now) {
-
-            return $cert
-        }
-    }
-
-    return $null
-}
-#
+    # Get the first certificate that is valid that matches the subject pattern
+    Get-ChildItem Cert:\LocalMachine\My | Where-Object {$_.Subject -like "*$CertName*" -and $_.NotBefore -le $now -and $_.NotAfter -ge $now} | Select-Object -First 1
+}#
 # BEGIN SCRIPT
 #
 #
@@ -182,11 +187,11 @@ if ($cert) {
         # Get Intune DeviceID and ManagedDeviceName from the registry or nhulls if not
         $ManagedDeviceName = $ManagedDeviceInfo.EntDeviceName
         $ManagedDeviceID = $ManagedDeviceInfo.EntDMID
+        # Log the success
+        Write-Log -LogFile $LogFile -Message "Retrieved Intune data for: $ManagedDeviceName, $ManagedDeviceID"
     } catch {
-        # Form the message
-        $Message = "Error reading enrollment data: "+ $Error
-        # Write the message
-        Write-Log -LogFile $LogFile -Message $Message
+        # Log the error
+        Write-Log -LogFile $LogFile -Message "Error reading enrollment data: $($Error)"
         # Clear the error
         $error.clear()
     }
@@ -205,14 +210,14 @@ if ($cert) {
 			    # Determine the device identifier from the subject name
 			    $AzureADDeviceID = ($AzureADJoinCertificate | Select-Object -ExpandProperty "Subject") -replace "CN=", ""
 		    }
+            # Log the success
+            Write-Log -LogFile $LogFile -Message "Retrieved Azure data for: $AzureADDeviceID"
 	    } else {
             Write-Log -LogFile $LogFile -Message "Azure client certificate not found."
         }
     } catch {
-        # Form the message
-        $Message = "Error reading Azure client certificate: "+ $Error
-        # Write the message
-        Write-Log -LogFile $LogFile -Message $Message
+        # Log the error
+        Write-Log -LogFile $LogFile -Message "Error reading Azure client certificate: $($Error)"
         # Clear the error
         $error.clear()
     }
@@ -227,7 +232,7 @@ if ($cert) {
     #   AMEngineVersion
     try {
         # Query the service
-        $DefSvc = Get-Service -name WinDefend
+        $DefSvc = Get-Service -name WinDefend -ErrorAction Stop
         # Get the data we need to report
         switch ([int]$DefSvc.Status) {
             1 {$Defender_State = "Stopped"}
@@ -246,11 +251,11 @@ if ($cert) {
             3 {$Defender_Start = "Manual"}
             4 {$Defender_Start = "Disabled"}
         }
+        # Log the success
+        Write-Log -LogFile $LogFile -Message "Retrieved Defender service data"
     } catch {
-        # Form the message
-        $Message = "Error reading Defender service data: "+ $Error
-        # Write the message
-        Write-Log -LogFile $LogFile -Message $Message
+        # Log the error
+        Write-Log -LogFile $LogFile -Message "Error reading Defender service data: $($Error)"
         # Clear the error
         $error.clear()
     }
@@ -261,12 +266,12 @@ if ($cert) {
         $Defender_SpySigAge = $DefWMI.AntispywareSignatureAge
         $Defender_NisSigAge = $DefWMI.NISSignatureAge
         $Defender_AVSigAge = $DefWMI.AntivirusSignatureAge
-        $Defender_AMEgine = $DefWMI.AMEngineVersion
+        $Defender_AMEngine = $DefWMI.AMEngineVersion
+        # Log the success
+        Write-Log -LogFile $LogFile -Message "Retrieved Defender WMI data"
     } catch {
-        # Form the message
-        $Message = "Error reading Defender WMI data: "+ $Error
-        # Write the message
-        Write-Log -LogFile $LogFile -Message $Message
+        # Log the error
+        Write-Log -LogFile $LogFile -Message "Error reading Defender WMI data: $($Error)"
         # Clear the error
         $error.clear()
     }
@@ -281,7 +286,7 @@ if ($cert) {
     #   Encryption Algorithm
     try {
         # Query the service
-        $BitSvc = Get-Service -name WinDefend
+        $BitSvc = Get-Service -name BDESvc
         # Get the data we need to report
         switch ([int]$BitSvc.Status) {
             1 {$Bitlocker_State = "Stopped"}
@@ -300,11 +305,11 @@ if ($cert) {
             3 {$Bitlocker_Start = "Manual"}
             4 {$Bitlocker_Start = "Disabled"}
         }
+        # Log the success
+        Write-Log -LogFile $LogFile -Message "Retrieved BitLocker service data"
     } catch {
-        # Form the message
-        $Message = "Error reading Bitlocker service data: "+ $Error
-        # Write the message
-        Write-Log -LogFile $LogFile -Message $Message
+        # Log the error
+        Write-Log -LogFile $LogFile -Message "Error reading Bitlocker service data: $($Error)"
         # Clear the error
         $error.clear()
     }
@@ -370,13 +375,13 @@ if ($cert) {
                 9 {$Status = "TPM Certificate"}
                 10 {$Status = "CNG protector"}
             }        
-            if ($BitProtector) {$BitProtector += ";$DriveLetter$Status"} else {$BitProtector = "$DriveLetter$Status"}        
+            if ($BitProtector) {$BitProtector += ";$DriveLetter$Status"} else {$BitProtector = "$DriveLetter$Status"}  
         }
+        # Log the success
+        Write-Log -LogFile $LogFile -Message "Retrieved Bitlocker WMI data"
     } catch {
-        # Form the message
-        $Message = "Error reading Bitlocker WMI data: "+ $Error
-        # Write the message
-        Write-Log -LogFile $LogFile -Message $Message
+        # Log the error
+        Write-Log -LogFile $LogFile -Message "Error reading Bitlocker WMI data: $($Error)"
         # Clear the error
         $error.clear()
     }
@@ -411,68 +416,119 @@ if ($cert) {
             $NetHash[$hashCtr] = ""
             $hashCtr++
         }
+        # Log the success
+        Write-Log -LogFile $LogFile -Message "Retrieved NetworkAdapter WMI data"
     } catch {
-        # Form the message
-        $Message = "Error reading NetworkAdapter WMI data: "+ $Error
-        # Write the message
-        Write-Log -LogFile $LogFile -Message $Message
+        # Log the error
+        Write-Log -LogFile $LogFile -Message "Error reading NetworkAdapter WMI data: $($Error)"
         # Clear the error
         $error.clear()
     }
     #
-	# Compile all the settings in a form we can easily convert to JSON
-	$Inventory = New-Object System.Object
-	$Inventory | Add-Member -MemberType NoteProperty -Name "ManagedDeviceName" -Value $ManagedDeviceName -Force
-    $Inventory | Add-Member -MemberType NoteProperty -Name "AzureADDeviceID" -Value $AzureADDeviceID -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "ManagedDeviceID" -Value $ManagedDeviceID -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "DefenderState" -Value $Defender_State -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "DefenderStart" -Value $Defender_Start -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "DefSpySigAge" -Value $Defender_SpySigAge -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "DefNisSigAge" -Value $Defender_NisSigAge -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "DefAVSigAge" -Value $Defender_AVSigAge -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "DefAMEngine" -Value $Defender_AMEgine -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "BitlockerState" -Value $Bitlocker_State -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "BitlockerStart" -Value $Bitlocker_Start -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "BitEncrypted" -Value $BitEncrypted -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "BitEncryption" -Value $BitEncryption -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "BitProtected" -Value $BitProtected -Force
-	$Inventory | Add-Member -MemberType NoteProperty -Name "BitProtector" -Value $BitProtector -Force
-    foreach ($thiskey in ($NetHash.Keys | Sort-Object)) {
-        $Name = "MAC" + $thiskey.ToString()
-        $Value = $NetHash[$thiskey]
-    	$Inventory | Add-Member -MemberType NoteProperty -Name $Name -Value $Value -Force
+    # Build inventory object as a proper PowerShell hashtable
+    $Inventory = [ordered]@{
+        ManagedDeviceName = $ManagedDeviceName
+        AzureADDeviceID   = $AzureADDeviceID
+        ManagedDeviceID   = $ManagedDeviceID
+        DefenderState     = $Defender_State
+        DefenderStart     = $Defender_Start
+        DefSpySigAge      = $Defender_SpySigAge
+        DefNisSigAge      = $Defender_NisSigAge
+        DefAVSigAge       = $Defender_AVSigAge
+        DefAMEngine       = $Defender_AMEngine
+        BitlockerState    = $Bitlocker_State
+        BitlockerStart    = $Bitlocker_Start
+        BitEncrypted      = $BitEncrypted
+        BitEncryption     = $BitEncryption
+        BitProtected      = $BitProtected
+        BitProtector      = $BitProtector
+    }
+
+    # Add MAC entries safely
+    foreach ($key in ($NetHash.Keys | Sort-Object)) {
+        $Inventory["MAC$key"] = $NetHash[$key]
+    }
+    # Convert to JSON Array safely
+    $Body = ConvertTo-Json -InputObject @($Inventory) -Depth 5
+    try {
+        $null = $Body | ConvertFrom-Json
+    } catch {
+        # We may need the entire JSON for debugging
+        $Message = "Invalid JSON : " + $Body
+        Write-Log -LogFile $LogFile -Message "Invalid JSON : $Body"
+        Write-Output "JSON is invalid!"
+        exit 1
     }
     #
-    # Convert to JSON for sending the data to Log Analytics Workspace
-    $body = $Inventory | ConvertTo-Json
     #
     # END INVENTORY
     #
     #
     # UnComment for DEBUGGING
-    $body
-    # We may need the entire JSON for debugging
-    $Message = "JSON : " + $body
-    Write-Log -LogFile $LogFile -Message $Message
+    $Body
     #
     # Get the auth token
     $bearerToken = Get-AuthTokenWithCert -TenantId $TenantID -ClientId $ApplicationID -CertThumbprint $thumbprint
     #
     # UnComment for DEBUGGING
     $bearerToken
+    #
     # Don't save the whole token to the log, just enough to know we got it
     $Message = "Token : " + $bearerToken.Substring(0, [Math]::Min(40, $bearerToken.Length))
     Write-Log -LogFile $LogFile -Message $Message
     #
     # Send the JSON to the Log Analytics Data Ingestion API
     $headers = @{"Authorization" = "Bearer $bearerToken"; "Content-Type" = "application/json" }
-    $uri = "$DceURI/dataCollectionRules/$DcrImmutableId/streams/Custom-$Table"+"?api-version=2023-01-01"
-    $uploadResponse = Invoke-RestMethod -Uri $uri -Method "Post" -Body $body -Headers $headers
+    $uri = "$DceURI/dataCollectionRules/$DcrImmutableId/streams/$($streamName)?api-version=2023-01-01"
+    # Log it
+    Write-Log -LogFile $LogFile -Message "Uploading inventory..."
+    Write-Log -LogFile $LogFile -Message "URI: $uri"
+    Write-Log -LogFile $LogFile -Message "Body Length: $($Body.Length) bytes"
     # Report back status
     $date = Get-Date -Format "dd-MM HH:mm"
     $OutputMessage = "InventoryDate:$date "
-    # Append Success or Fail to the Output Message
-    if ($uploadResponse -match "200 :") {$OutputMessage += "DeviceInventory:OK " + $uploadResponse} else {$OutputMessage += "DeviceInventory:Fail " + $uploadResponse}
+    try {
+        # We use invoke-webrequest so we can get better response data.
+        $response = Invoke-WebRequest -Uri $uri -Method Post -Headers $headers -Body $Body -ErrorAction Stop -UseBasicParsing
+        # Log the response status and description
+        Write-Log -LogFile $LogFile -Message "HTTP Status: $($response.StatusCode)"
+        Write-Log -LogFile $LogFile -Message "Status Description: $($response.StatusDescription)"
+        # Log any header data sent back in the reponse
+        foreach ($header in $response.Headers.Keys) { Write-Log -LogFile $LogFile -Message "Header: $header = $($response.Headers[$header])" }
+        # Log the response body content
+        if (![string]::IsNullOrWhiteSpace($response.Content)) {
+            Write-Log -LogFile $LogFile -Message "Response Body: $($response.Content)"
+        } else {
+            Write-Log -LogFile $LogFile -Message "Response Body: <empty>"
+        }
+        # This output can be seen in the console
+        $OutputMessage += "DeviceInventory:OK (" + $response.StatusCode + ")"
+    } catch {
+        # Put a big FAILED message in the log
+        Write-Log -LogFile $LogFile -Message "Upload FAILED"
+        # If we got a response to report the failure cause
+        if ($_.Exception.Response) {
+            # Get the error code
+            $status = $_.Exception.Response.StatusCode.value__
+            # Log the HTPP status code it returned
+            Write-Log -LogFile $LogFile -Message "HTTP Status: $status"
+            try {
+                # Read the response if we can                
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $body = $reader.ReadToEnd()
+                $reader.Close()
+                # Log the full reponse
+                Write-Log -LogFile $LogFile -Message "Azure Response: $body"
+            } catch {
+                # Log that there was no response
+                Write-Log -LogFile $LogFile -Message "Unable to read response body."
+            }
+        }
+        # Put the exception data in the log
+        Write-Log -LogFile $LogFile -Message $_.Exception.Message
+        # This will be returned to the console
+        $OutputMessage += "DeviceInventory:Failed ($status)"
+    }
 } else {
     # Report back status
     $date = Get-Date -Format "dd-MM HH:mm"

@@ -40,6 +40,19 @@ REST API calls can come in many forms, with multiple issues and limitations. Thi
 
 ---
 
+## Intune Lab
+
+**./Intune Lab**  
+This project focuses on submitting, collecting, processing, and analyzing data from various Azure APIs.
+
+As robust as Intune is, it still has reporting and inventory limitations. Extending Intune's functionality with compliance reporting is the focus of this lab.
+
+### Folders
+
+- **./Intune Lab/OOBE Image** — Documentation for lab test device builds
+- **./Intune Lab/Projects** — Project documentation and reference material  
+
+---
 # Additional Information
 
 Refer to each project's README for more detailed information.

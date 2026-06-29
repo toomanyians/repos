@@ -1,0 +1,19 @@
+2026-06-28 19:44:55	Retrieved Intune data for: <Device Name>
+2026-06-28 19:44:55	Retrieved Azure data for: <AzureADDeviceID>
+2026-06-28 19:44:55	Retrieved Defender service data
+2026-06-28 19:44:55	Retrieved Defender WMI data
+2026-06-28 19:44:55	Retrieved BitLocker service data
+2026-06-28 19:44:55	Retrieved Bitlocker WMI data
+2026-06-28 19:44:55	Retrieved NetworkAdapter WMI data
+2026-06-28 19:44:56	Token : eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1
+2026-06-28 19:44:56	Uploading inventory...
+2026-06-28 19:44:56	URI: <DCE URL>
+2026-06-28 19:44:56	Body Length: 858 bytes
+2026-06-28 19:44:57	HTTP Status: 204
+2026-06-28 19:44:57	Status Description: No Content
+2026-06-28 19:44:57	Header: Strict-Transport-Security = max-age=31536000; includeSubDomains; preload
+2026-06-28 19:44:57	Header: x-ms-request-id = 28cce595-3773-43cd-8c4d-ae5ec4e0e882
+2026-06-28 19:44:57	Header: X-Content-Type-Options = nosniff
+2026-06-28 19:44:57	Header: Date = Mon, 29 Jun 2026 01:44:56 GMT
+2026-06-28 19:44:57	Header: Server = Microsoft-HTTPAPI/2.0
+2026-06-28 19:44:57	Response Body: <empty>

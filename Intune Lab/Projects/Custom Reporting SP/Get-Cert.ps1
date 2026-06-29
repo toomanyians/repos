@@ -1,6 +1,6 @@
 ﻿$params = @{
     Type = 'Custom'
-    DnsName = 'ianbaxter.onmicrosoft.com' 
+    DnsName = '<Your DNS Name>' 
     CertStoreLocation = 'Cert:\CurrentUser\My'
     KeyExportPolicy = 'Exportable'
     KeySpec = 'Signature'

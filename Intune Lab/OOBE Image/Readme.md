@@ -1,14 +1,12 @@
 # Introduction
 
+Any good lab needs a mix of client devices. I intend to document the process and archive it here for general use.
 
 ---
 
 ## Files
 
-### **./IntuneLab/OOBE Image**
-Out of Box Provisioning for an Oracle VirtualBox client and others
-Go here for the host software: https://www.virtualbox.org/wiki/Downloads
-
-### **./IntuneLab/Projects**
-- Stay tuned, or just explore. Some people write documents when the project is done. I write them in  various stages throughout the project.  
-
+Stay tuned for:
+	Windows VDI OOBE build using VirtualBox (In Progress)
+	Ubuntu Mate (Linux) Lab Device Build and Enrollment (In Progress)
+	MacOS Tahoe (MacBook) Lab Device Build and Enrollment

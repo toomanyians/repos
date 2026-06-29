@@ -16,3 +16,5 @@ EveOnline/Phase_2/
 *.txt
 # Ignore temporary files
 *.tmp
+# Any subfolder named "private"
+**/private/
